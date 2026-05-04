@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+from aiogram.types import BotCommand
 from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import settings
@@ -35,6 +36,15 @@ async def main() -> None:
     dp.include_router(profile.router)
 
     logger.info("Starting Interview Coach Bot...")
+    await bot.set_my_commands([
+        BotCommand(command="start",       description="Главное меню"),
+        BotCommand(command="stop",        description="Остановить текущую сессию"),
+        BotCommand(command="stats",       description="Моя статистика"),
+        BotCommand(command="profile",     description="Профиль и достижения"),
+        BotCommand(command="leaderboard", description="Таблица лидеров"),
+        BotCommand(command="upgrade",     description="Pro-подписка"),
+        BotCommand(command="help",        description="Помощь"),
+    ])
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
 

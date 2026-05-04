@@ -5,6 +5,7 @@ import logging
 from typing import Optional
 
 from aiogram import Router, F
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message, CallbackQuery
@@ -483,3 +484,34 @@ def _score_emoji(score: int) -> str:
 def _progress_bar(pct: int, length: int = 10) -> str:
     filled = round(pct / 100 * length)
     return "█" * filled + "░" * (length - filled)
+
+
+@router.message(Command("stop"))
+async def cmd_stop(message: Message, db_user: User, db_session, state: FSMContext) -> None:
+    data = await state.get_data()
+    session_id = data.get("session_id")
+    await state.clear()
+
+    if session_id:
+        interview = await session_repo.get_session_by_id(db_session, session_id)
+        if interview and interview.status == "active":
+            await session_repo.finish_session(db_session, interview)
+
+    await message.answer(
+        "⏹ Сессия остановлена.",
+        reply_markup=main_menu_kb(),
+    )
+
+
+@router.message(Command("stop"))
+async def cmd_stop(message: Message, db_user: User, db_session, state: FSMContext) -> None:
+    data = await state.get_data()
+    session_id = data.get("session_id")
+    await state.clear()
+
+    if session_id:
+        interview = await session_repo.get_session_by_id(db_session, session_id)
+        if interview and interview.status == "active":
+            await session_repo.finish_session(db_session, interview)
+
+    await message.answer("⏹ Сессия остановлена.", reply_markup=main_menu_kb())
