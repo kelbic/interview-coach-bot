@@ -7,7 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from config import settings
 from db.session import init_db
-from bot.handlers import start, interview, stats, billing, profile
+from bot.handlers import start, interview, stats, billing, profile, legal
 from bot.middlewares.user_check import UserMiddleware
 
 logging.basicConfig(
@@ -34,6 +34,7 @@ async def main() -> None:
     dp.include_router(stats.router)
     dp.include_router(billing.router)
     dp.include_router(profile.router)
+    dp.include_router(legal.router)
 
     logger.info("Starting Interview Coach Bot...")
     await bot.set_my_commands([
@@ -44,6 +45,8 @@ async def main() -> None:
         BotCommand(command="leaderboard", description="Таблица лидеров"),
         BotCommand(command="upgrade",     description="Pro-подписка"),
         BotCommand(command="help",        description="Помощь"),
+        BotCommand(command="tos",         description="Пользовательское соглашение"),
+        BotCommand(command="privacy",     description="Политика персональных данных"),
     ])
     await dp.start_polling(bot, allowed_updates=dp.resolve_used_update_types())
 
