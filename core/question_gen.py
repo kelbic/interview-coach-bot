@@ -115,11 +115,15 @@ async def evaluate_answer(
         max_tokens=800 if is_pro else 500,
     )
 
-    # Strip markdown fences if present
+    import re
+    import re as _re
     clean = raw.strip()
-    if clean.startswith("```"):
-        lines = clean.split("\n")
-        clean = "\n".join(lines[1:-1]) if len(lines) > 2 else clean
+    # Extract JSON object with regex — handles ```json fences and extra text
+    match = _re.search(r'\{.*\}', clean, _re.DOTALL)
+    if match:
+        clean = match.group(0)
+    # Remove trailing commas before } or ] (common LLM mistake)
+    clean = _re.sub(r',\s*([}\]])', r'', clean)
 
     try:
         result = json.loads(clean)
