@@ -239,7 +239,7 @@ async def _ask_next_question(
     await state.set_state(InterviewActive.waiting_answer)
 
 
-@router.message(InterviewActive.waiting_answer)
+@router.message(InterviewActive.waiting_answer, ~F.text.startswith("/"))
 async def got_answer(
     message: Message,
     db_user: User,
