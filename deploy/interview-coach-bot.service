@@ -1,0 +1,17 @@
+[Unit]
+Description=Interview Coach Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/opt/interview-coach-bot
+EnvironmentFile=/opt/interview-coach-bot/.env
+ExecStart=/opt/interview-coach-bot/venv/bin/python main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
