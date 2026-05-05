@@ -46,7 +46,7 @@ async def cb_start_interview(callback: CallbackQuery, db_user: User, state: FSMC
 
     hint = ""
     if db_user.last_role:
-        hint = f"\n\n💡 Последний раз: <b>{db_user.last_grade} {db_user.last_role}</b>"
+        hint = f"\n\n💡 Последний раз: <b>{db_user.last_role} ({db_user.last_grade})</b>"
 
     await callback.message.edit_text(
         f"🎯 <b>Настройка собеседования</b>{hint}\n\n"
@@ -261,7 +261,17 @@ async def got_answer(
     # Фильтр навигационных сообщений
     nav_words = {"следующий вопрос", "следующий", "дальше", "пропустить", "skip", "next"}
     if answer_text.lower() in nav_words or len(answer_text) < 5:
-        await message.answer("Напиши развёрнутый ответ на вопрос, или нажми кнопку ➡️ Следующий вопрос")
+        from aiogram.utils.keyboard import InlineKeyboardBuilder
+        from aiogram.types import InlineKeyboardButton
+        nav_kb = InlineKeyboardBuilder()
+        nav_kb.row(
+            InlineKeyboardButton(text="⏭ Пропустить вопрос", callback_data="next_question"),
+            InlineKeyboardButton(text="🏁 Завершить", callback_data="finish_interview"),
+        )
+        await message.answer(
+            "Напиши развёрнутый ответ на вопрос ↑",
+            reply_markup=nav_kb.as_markup(),
+        )
         return
 
     data = await state.get_data()
