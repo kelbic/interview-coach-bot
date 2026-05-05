@@ -221,11 +221,13 @@ async def _ask_next_question(
     question = await session_repo.add_question(db_session, interview, question_text, category)
     await state.update_data(question_id=question.id)
 
+    session_limit_map = {"hr": 10, "tech": 10, "mixed": 20}
+    session_limit = session_limit_map.get(interview.interview_type, 10)
     q_num = interview.questions_count
     progress = _progress_bar(db_user.readiness_pct)
 
     text = (
-        f"❓ <b>Вопрос #{q_num}</b>\n\n"
+        f"❓ <b>Вопрос {q_num}/{session_limit}</b>\n\n"
         f"{question_text}\n\n"
         f"📊 Готовность: {progress} {db_user.readiness_pct}%\n\n"
         "<i>Напиши свой ответ в чат ↓</i>"
