@@ -182,7 +182,7 @@ async def generate_final_report(
     summary_str = "\n".join(cat_summary)
     total_avg = round(sum(q.get("score", 50) for q in questions_with_scores) / len(questions_with_scores))
 
-    user_content = f"""Ты карьерный коуч. Дай финальный отчёт по mock-интервью.
+    user_content = f"""Ты карьерный коуч. Дай финальный отчёт по mock-интервью. Пиши простым текстом БЕЗ markdown, без #, без **, без ---.
 
 Позиция: {grade} {role}
 Вопросов пройдено: {len(questions_with_scores)}

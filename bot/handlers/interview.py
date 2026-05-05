@@ -551,7 +551,7 @@ async def _show_final_report(
 
     await message.answer("📊 Генерирую твой финальный отчёт...")
 
-    answered = [q for q in interview.questions if q.score is not None]
+    answered = [q for q in interview.questions if q.score is not None and q.answer_text is not None]
     questions_data = [
         {"category": q.category or "general", "score": q.score}
         for q in answered
