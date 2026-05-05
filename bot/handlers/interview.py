@@ -250,6 +250,11 @@ async def got_answer(
     if not answer_text:
         await message.answer("Напиши свой ответ текстом 👇")
         return
+    # Фильтр навигационных сообщений
+    nav_words = {"следующий вопрос", "следующий", "дальше", "пропустить", "skip", "next"}
+    if answer_text.lower() in nav_words or len(answer_text) < 5:
+        await message.answer("Напиши развёрнутый ответ на вопрос, или нажми кнопку ➡️ Следующий вопрос")
+        return
 
     data = await state.get_data()
     session_id = data.get("session_id")
