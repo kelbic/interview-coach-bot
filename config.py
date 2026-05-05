@@ -33,7 +33,7 @@ def _load() -> Settings:
         TELEGRAM_BOT_TOKEN=token,
         OPENROUTER_API_KEY=api_key,
         ADMIN_USER_ID=admin_id,
-        FREE_QUESTIONS_PER_DAY=int(os.environ.get("FREE_QUESTIONS_PER_DAY", "5")),
+        FREE_QUESTIONS_TOTAL=int(os.environ.get("FREE_QUESTIONS_TOTAL", "20")),
         DB_PATH=os.environ.get("DB_PATH", "interview_coach.db"),
     )
 
