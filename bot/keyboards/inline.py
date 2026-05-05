@@ -58,7 +58,7 @@ def after_answer_kb(is_pro: bool) -> InlineKeyboardMarkup:
     )
     if not is_pro:
         builder.row(
-            InlineKeyboardButton(text="💎 Детальный разбор (Pro)", callback_data="upgrade"),
+            InlineKeyboardButton(text="💎 Детальный разбор (Pro)", callback_data="upgrade_from_session"),
         )
     builder.row(
         InlineKeyboardButton(text="🏁 Завершить сессию", callback_data="finish_interview"),

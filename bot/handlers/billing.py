@@ -105,3 +105,21 @@ async def successful_payment(
         logger.info("User %d upgraded to Pro until %s", db_user.id, until)
     else:
         await message.answer("Платёж получен, но payload неизвестен. Напишите в поддержку.")
+
+
+@router.callback_query(F.data == "upgrade_from_session")
+async def upgrade_from_session(callback: CallbackQuery, db_user: User) -> None:
+    """Show Pro offer without clearing FSM state — user can return to session."""
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+    from aiogram.types import InlineKeyboardButton
+
+    builder = InlineKeyboardBuilder()
+    builder.row(InlineKeyboardButton(text="💎 Купить Pro (280 ⭐)", callback_data="buy_pro"))
+    builder.row(InlineKeyboardButton(text="◀️ Вернуться к вопросу", callback_data="back_to_question"))
+
+    await callback.message.answer(
+        PRO_FEATURES,
+        parse_mode="HTML",
+        reply_markup=builder.as_markup(),
+    )
+    await callback.answer()

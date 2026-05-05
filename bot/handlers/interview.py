@@ -46,7 +46,7 @@ async def cb_start_interview(callback: CallbackQuery, db_user: User, state: FSMC
 
     hint = ""
     if db_user.last_role:
-        hint = f"\n\n💡 Последний раз: <b>{db_user.last_role} ({db_user.last_grade})</b>"
+        hint = f"\n\n💡 Последний раз: <b>{db_user.last_role}</b> · {db_user.last_grade}"
 
     await callback.message.edit_text(
         f"🎯 <b>Настройка собеседования</b>{hint}\n\n"
@@ -600,3 +600,9 @@ async def _show_final_report(
     ))
 
     await message.answer(report_text, parse_mode="HTML", reply_markup=kb.as_markup())
+
+
+@router.callback_query(F.data == "back_to_question")
+async def back_to_question(callback: CallbackQuery) -> None:
+    await callback.message.delete()
+    await callback.answer("Продолжаем! 💪")
