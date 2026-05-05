@@ -226,7 +226,7 @@ async def _ask_next_question(
     q_num = interview.questions_count
 
     # Проверяем лимит сессии
-    if not db_user.is_pro and interview.questions_count >= session_limit:
+    if not db_user.is_pro and interview.questions_count > session_limit:
         await _show_final_report(message, db_user, db_session, interview, state)
         return
     progress = _progress_bar(db_user.readiness_pct)
