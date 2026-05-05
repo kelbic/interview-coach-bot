@@ -231,10 +231,18 @@ async def _ask_next_question(
         "<i>Напиши свой ответ в чат ↓</i>"
     )
 
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+    from aiogram.types import InlineKeyboardButton
+    skip_kb = InlineKeyboardBuilder()
+    skip_kb.row(
+        InlineKeyboardButton(text="⏭ Пропустить вопрос", callback_data="next_question"),
+        InlineKeyboardButton(text="🏁 Завершить", callback_data="finish_interview"),
+    )
+
     if edit:
-        await message.edit_text(text, parse_mode="HTML")
+        await message.edit_text(text, parse_mode="HTML", reply_markup=skip_kb.as_markup())
     else:
-        await message.answer(text, parse_mode="HTML")
+        await message.answer(text, parse_mode="HTML", reply_markup=skip_kb.as_markup())
 
     await state.set_state(InterviewActive.waiting_answer)
 
