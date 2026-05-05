@@ -224,6 +224,11 @@ async def _ask_next_question(
     session_limit_map = {"hr": 5, "tech": 5, "mixed": 10}
     session_limit = session_limit_map.get(interview.interview_type, 10)
     q_num = interview.questions_count
+
+    # Проверяем лимит сессии
+    if not db_user.is_pro and interview.questions_count >= session_limit:
+        await _show_final_report(message, db_user, db_session, interview, state)
+        return
     progress = _progress_bar(db_user.readiness_pct)
 
     text = (
