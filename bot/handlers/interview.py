@@ -159,7 +159,7 @@ async def _launch_session(
         used = await user_repo.get_questions_used_today(db_session, db_user.id)
         if used >= settings.FREE_QUESTIONS_TOTAL:
             await message.answer(
-                f"⚠️ Ты использовал все <b>{settings.FREE_QUESTIONS_PER_DAY} бесплатных вопросов</b> на сегодня.\n\n"
+                f"⚠️ Ты использовал все <b>{settings.FREE_QUESTIONS_TOTAL} бесплатных вопросов</b> на сегодня.\n\n"
                 "💎 Переходи на <b>Pro</b> для безлимитной практики и детальных разборов!",
                 reply_markup=main_menu_kb(),
                 parse_mode="HTML",
@@ -290,7 +290,7 @@ async def got_answer(
         used = await user_repo.get_questions_used_today(db_session, db_user.id)
         if used >= settings.FREE_QUESTIONS_TOTAL:
             await message.answer(
-                f"⚠️ Лимит исчерпан ({settings.FREE_QUESTIONS_PER_DAY} вопросов/день).\n"
+                f"⚠️ Лимит исчерпан ({settings.FREE_QUESTIONS_TOTAL} вопросов/день).\n"
                 "Возвращайся завтра или подключи 💎 Pro!",
                 reply_markup=main_menu_kb(),
             )
