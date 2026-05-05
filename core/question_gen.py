@@ -100,7 +100,7 @@ async def evaluate_answer(
     detail_level = "детальный" if is_pro else "краткий"
 
     # Обрезаем слишком длинные ответы
-    answer_trimmed = answer[:1500] + "..." if len(answer) > 1500 else answer
+    answer_trimmed = answer[:800] + "...[сокращено]" if len(answer) > 800 else answer
     user_content = f"""Ты опытный карьерный коуч и тех-лид. Проведи разбор ответа на мок-интервью.
 
 Позиция: {grade} {role}
