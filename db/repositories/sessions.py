@@ -65,8 +65,9 @@ async def add_question(
     session: AsyncSession,
     interview: InterviewSession,
     question_text: str,
+    category: str = "general",
 ) -> Question:
-    q = Question(session_id=interview.id, question_text=question_text)
+    q = Question(session_id=interview.id, question_text=question_text, category=category)
     session.add(q)
     interview.questions_count += 1
     await session.commit()

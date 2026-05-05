@@ -92,6 +92,8 @@ class Question(Base):
     feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     ideal_answer: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
+    category: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+
     asked_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
     answered_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 

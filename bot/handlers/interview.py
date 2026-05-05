@@ -15,7 +15,7 @@ from bot.keyboards.inline import (
     after_answer_kb, confirm_finish_kb, main_menu_kb,
 )
 from config import settings
-from core.question_gen import generate_question, evaluate_answer
+from core.question_gen import generate_question, evaluate_answer, generate_final_report
 from db.models import User
 from db.repositories import users as user_repo
 from db.repositories import sessions as session_repo
@@ -157,7 +157,7 @@ async def _launch_session(
     # Check daily limit for free users
     if not db_user.is_pro:
         used = await user_repo.get_questions_used_today(db_session, db_user.id)
-        if used >= settings.FREE_QUESTIONS_PER_DAY:
+        if used >= settings.FREE_QUESTIONS_TOTAL:
             await message.answer(
                 f"⚠️ Ты использовал все <b>{settings.FREE_QUESTIONS_PER_DAY} бесплатных вопросов</b> на сегодня.\n\n"
                 "💎 Переходи на <b>Pro</b> для безлимитной практики и детальных разборов!",
@@ -205,7 +205,7 @@ async def _ask_next_question(
         if itype == "mixed":
             itype = "hr" if len(prev_questions) % 2 == 0 else "tech"
 
-        question_text = await generate_question(
+        question_text, category = await generate_question(
             role=interview.role,
             grade=interview.grade,
             company=interview.company,
@@ -216,9 +216,9 @@ async def _ask_next_question(
         )
     except Exception as e:
         logger.error("Question generation failed: %s", e)
-        question_text = "Расскажи о своём самом сложном техническом проекте."
+        question_text, category = "Расскажи о своём самом сложном техническом проекте.", "general"
 
-    question = await session_repo.add_question(db_session, interview, question_text)
+    question = await session_repo.add_question(db_session, interview, question_text, category)
     await state.update_data(question_id=question.id)
 
     q_num = interview.questions_count
@@ -263,7 +263,7 @@ async def got_answer(
     # Check daily limit
     if not db_user.is_pro:
         used = await user_repo.get_questions_used_today(db_session, db_user.id)
-        if used >= settings.FREE_QUESTIONS_PER_DAY:
+        if used >= settings.FREE_QUESTIONS_TOTAL:
             await message.answer(
                 f"⚠️ Лимит исчерпан ({settings.FREE_QUESTIONS_PER_DAY} вопросов/день).\n"
                 "Возвращайся завтра или подключи 💎 Pro!",
@@ -388,7 +388,7 @@ async def cb_next_question(
     # Check limit
     if not db_user.is_pro:
         used = await user_repo.get_questions_used_today(db_session, db_user.id)
-        if used >= settings.FREE_QUESTIONS_PER_DAY:
+        if used >= settings.FREE_QUESTIONS_TOTAL:
             await callback.message.answer(
                 f"⚠️ Лимит {settings.FREE_QUESTIONS_PER_DAY} вопросов/день исчерпан.\n"
                 "💎 Pro — безлимитная практика!",
@@ -515,3 +515,72 @@ async def cmd_stop(message: Message, db_user: User, db_session, state: FSMContex
             await session_repo.finish_session(db_session, interview)
 
     await message.answer("⏹ Сессия остановлена.", reply_markup=main_menu_kb())
+
+
+async def _show_final_report(
+    message,
+    db_user,
+    db_session,
+    interview,
+    state: FSMContext,
+) -> None:
+    """Generate and show final report + paywall for free users."""
+    await session_repo.finish_session(db_session, interview)
+    await state.clear()
+
+    await message.answer("📊 Генерирую твой финальный отчёт...")
+
+    answered = [q for q in interview.questions if q.score is not None]
+    questions_data = [
+        {"category": q.category or "general", "score": q.score}
+        for q in answered
+    ]
+
+    try:
+        report = await generate_final_report(
+            role=interview.role,
+            grade=interview.grade,
+            questions_with_scores=questions_data,
+            is_pro=db_user.is_pro,
+        )
+    except Exception as e:
+        logger.error("Report generation failed: %s", e)
+        report = "Не удалось сгенерировать отчёт автоматически."
+
+    # Category breakdown
+    by_cat: dict[str, list[int]] = {}
+    for q in answered:
+        cat = q.category or "general"
+        by_cat.setdefault(cat, []).append(q.score)
+
+    from core.question_gen import CATEGORIES_RU
+    breakdown = []
+    for cat, scores in sorted(by_cat.items(), key=lambda x: -sum(x[1])/len(x[1])):
+        avg = round(sum(scores) / len(scores))
+        emoji = "🟢" if avg >= 70 else ("🟡" if avg >= 45 else "🔴")
+        breakdown.append(f"{emoji} {CATEGORIES_RU.get(cat, cat)}: {avg}/100")
+
+    total_avg = round(sum(q.score for q in answered) / len(answered)) if answered else 0
+    progress = _progress_bar(db_user.readiness_pct)
+
+    report_text = (
+        f"🏁 <b>Финальный отчёт</b>\n\n"
+        f"<b>Пройдено вопросов:</b> {len(answered)}\n"
+        f"<b>Средний балл:</b> {total_avg}/100\n"
+        f"<b>Готовность:</b> {progress} {db_user.readiness_pct}%\n\n"
+        f"<b>По категориям:</b>\n" + "\n".join(breakdown) + "\n\n"
+        f"<b>Разбор от коуча:</b>\n{report}"
+    )
+
+    from aiogram.utils.keyboard import InlineKeyboardBuilder
+    from aiogram.types import InlineKeyboardButton
+    kb = InlineKeyboardBuilder()
+    kb.row(InlineKeyboardButton(
+        text="💎 Pro — безлимит + персональный план",
+        callback_data="upgrade"
+    ))
+    kb.row(InlineKeyboardButton(
+        text="◀️ В меню", callback_data="back_to_menu"
+    ))
+
+    await message.answer(report_text, parse_mode="HTML", reply_markup=kb.as_markup())

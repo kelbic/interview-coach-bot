@@ -54,33 +54,17 @@ async def update_streak(session: AsyncSession, user: User) -> bool:
 
 
 async def get_questions_used_today(session: AsyncSession, user_id: int) -> int:
-    today = date.today()
-    result = await session.execute(
-        select(DailyUsage).where(
-            DailyUsage.user_id == user_id,
-            DailyUsage.usage_date == today,
-        )
-    )
-    usage = result.scalar_one_or_none()
-    return usage.questions_used if usage else 0
+    """Для free-tier: возвращает total вопросов за всё время."""
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    return user.total_questions if user else 0
 
 
 async def increment_daily_usage(session: AsyncSession, user_id: int) -> int:
-    today = date.today()
-    result = await session.execute(
-        select(DailyUsage).where(
-            DailyUsage.user_id == user_id,
-            DailyUsage.usage_date == today,
-        )
-    )
-    usage = result.scalar_one_or_none()
-    if usage is None:
-        usage = DailyUsage(user_id=user_id, usage_date=today, questions_used=1)
-        session.add(usage)
-    else:
-        usage.questions_used += 1
-    await session.commit()
-    return usage.questions_used
+    """Для совместимости — просто возвращаем total_questions."""
+    result = await session.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    return user.total_questions if user else 0
 
 
 async def add_score(session: AsyncSession, user: User, score: int) -> None:

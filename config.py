@@ -8,7 +8,7 @@ class Settings:
     OPENROUTER_API_KEY: str
     ADMIN_USER_ID: int
 
-    FREE_QUESTIONS_PER_DAY: int = 5
+    FREE_QUESTIONS_TOTAL: int = 20
     PRO_MONTHLY_PRICE_STARS: int = 280  # ~$5 at ~$0.018/star
 
     DB_PATH: str = "interview_coach.db"

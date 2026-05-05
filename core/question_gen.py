@@ -23,7 +23,7 @@ async def generate_question(
     previous_questions: list[str],
     job_description: Optional[str] = None,
     is_pro: bool = False,
-) -> str:
+) -> tuple[str, str]:
     model = settings.PRO_MODEL if is_pro else settings.FREE_MODEL
 
     prev_str = ""
@@ -57,14 +57,33 @@ async def generate_question(
 
 Верни ТОЛЬКО сам вопрос, без нумерации, пояснений и вводных фраз."""
 
-    return await chat_completion(
+    if interview_type == "tech":
+        cat_instruction = """\n\nВ КОНЦЕ ответа добавь строку:
+CATEGORY: <одно из: python, algorithms, system_design, databases, devops, architecture, security, general>"""
+    else:
+        cat_instruction = """\n\nВ КОНЦЕ ответа добавь строку:
+CATEGORY: behavioral"""
+    user_content += cat_instruction
+
+    raw = await chat_completion(
         messages=[
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_content},
         ],
         model=model,
-        max_tokens=300,
+        max_tokens=350,
     )
+    # Extract category
+    category = "general"
+    lines = raw.strip().split("\n")
+    question_lines = []
+    for line in lines:
+        if line.strip().startswith("CATEGORY:"):
+            category = line.split(":", 1)[1].strip().lower()
+        else:
+            question_lines.append(line)
+    question_text = "\n".join(question_lines).strip()
+    return question_text, category
 
 
 async def evaluate_answer(
@@ -136,3 +155,68 @@ async def evaluate_answer(
             "feedback": "Не удалось автоматически оценить ответ. Попробуй ещё раз.",
             "ideal_answer": "",
         }
+
+
+CATEGORIES_RU = {
+    "python": "Python",
+    "algorithms": "Алгоритмы",
+    "system_design": "System Design",
+    "databases": "Базы данных",
+    "devops": "DevOps",
+    "architecture": "Архитектура",
+    "security": "Безопасность",
+    "behavioral": "Поведенческие",
+    "general": "Общие",
+}
+
+
+async def generate_final_report(
+    role: str,
+    grade: str,
+    questions_with_scores: list[dict],
+    is_pro: bool = False,
+) -> str:
+    """Generate final session report with category breakdown."""
+    model = settings.PRO_MODEL if is_pro else settings.FREE_MODEL
+
+    # Group by category
+    by_category: dict[str, list[int]] = {}
+    for q in questions_with_scores:
+        cat = q.get("category") or "general"
+        score = q.get("score", 50)
+        by_category.setdefault(cat, []).append(score)
+
+    cat_summary = []
+    for cat, scores in by_category.items():
+        avg = round(sum(scores) / len(scores))
+        cat_ru = CATEGORIES_RU.get(cat, cat)
+        cat_summary.append(f"- {cat_ru}: {avg}/100 ({len(scores)} вопр.)")
+
+    summary_str = "\n".join(cat_summary)
+    total_avg = round(sum(q.get("score", 50) for q in questions_with_scores) / len(questions_with_scores))
+
+    user_content = f"""Ты карьерный коуч. Дай финальный отчёт по mock-интервью.
+
+Позиция: {grade} {role}
+Вопросов пройдено: {len(questions_with_scores)}
+Средний балл: {total_avg}/100
+
+Результаты по категориям:
+{summary_str}
+
+Напиши финальный отчёт на русском (3-4 абзаца):
+1. Общий вывод — как прошло интервью в целом
+2. Сильные стороны — где кандидат показал себя хорошо (конкретно)
+3. Зоны роста — что нужно проработать (конкретно, с советами)
+4. Следующий шаг — 1-2 конкретных действия для улучшения
+
+Тон: как опытный ментор после мок-интервью. Поддерживающий, честный, конкретный."""
+
+    return await chat_completion(
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_content},
+        ],
+        model=model,
+        max_tokens=600,
+    )
