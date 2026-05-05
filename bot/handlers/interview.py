@@ -316,7 +316,7 @@ async def got_answer(
         return
 
     # Show typing indicator
-    await message.answer("🔍 Оцениваю ответ...")
+    thinking_msg = await message.answer("🔍 Оцениваю ответ...")
 
     # Determine effective interview type
     itype = interview.interview_type
@@ -335,11 +335,16 @@ async def got_answer(
         )
     except Exception as e:
         logger.error("Evaluation failed: %s", e)
-        evaluation = {
-            "score": 50,
-            "feedback": "Не удалось оценить автоматически. Продолжай практиковаться!",
-            "ideal_answer": "",
-        }
+        try:
+            await thinking_msg.delete()
+        except Exception:
+            pass
+        await message.answer(
+            "⚠️ Не удалось получить оценку - сервер AI не ответил вовремя.\n"
+            "Нажми Следующий вопрос чтобы продолжить, или /stop чтобы завершить.",
+            reply_markup=after_answer_kb(db_user.is_pro),
+        )
+        return
 
     score = evaluation["score"]
     feedback = evaluation.get("feedback", "")
@@ -394,6 +399,10 @@ async def got_answer(
         text += "\n\n🏆 <b>Новые достижения!</b>\n"
         text += "\n".join(f"{e} <b>{t}</b> — {d}" for e, t, d in new_achievements)
 
+    try:
+        await thinking_msg.delete()
+    except Exception:
+        pass
     await message.answer(text, reply_markup=after_answer_kb(db_user.is_pro), parse_mode="HTML")
 
 
