@@ -221,7 +221,7 @@ async def _ask_next_question(
     question = await session_repo.add_question(db_session, interview, question_text, category)
     await state.update_data(question_id=question.id)
 
-    session_limit_map = {"hr": 10, "tech": 10, "mixed": 20}
+    session_limit_map = {"hr": 5, "tech": 5, "mixed": 10}
     session_limit = session_limit_map.get(interview.interview_type, 10)
     q_num = interview.questions_count
     progress = _progress_bar(db_user.readiness_pct)
@@ -410,17 +410,8 @@ async def cb_next_question(
         await callback.answer()
         return
 
-    # Check limit
-    if not db_user.is_pro:
-        used = await user_repo.get_questions_used_today(db_session, db_user.id)
-        if used >= settings.FREE_QUESTIONS_TOTAL:
-            await callback.message.answer(
-                f"⚠️ Лимит {settings.FREE_QUESTIONS_PER_DAY} вопросов/день исчерпан.\n"
-                "💎 Pro — безлимитная практика!",
-                reply_markup=main_menu_kb(),
-            )
-            await callback.answer()
-            return
+    # Лимит сессии проверяется в _ask_next_question
+    pass
 
     interview = await session_repo.get_session_by_id(db_session, session_id)
     if not interview:
