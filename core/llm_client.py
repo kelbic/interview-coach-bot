@@ -23,7 +23,7 @@ def _get_client() -> httpx.AsyncClient:
                 "HTTP-Referer": "https://interview-coach-bot.tg",
                 "X-Title": "Interview Coach Bot",
             },
-            timeout=60.0,
+            timeout=45.0,
         )
     return _client
 
@@ -57,6 +57,12 @@ async def chat_completion(
             logger.error("LLM HTTP error %s: %s", e.response.status_code, e.response.text)
             if attempt < retries - 1:
                 await asyncio.sleep(2 ** attempt)
+            else:
+                raise
+        except asyncio.TimeoutError as e:
+            logger.warning("LLM timeout attempt %d", attempt)
+            if attempt < retries - 1:
+                await asyncio.sleep(2)
             else:
                 raise
         except Exception as e:
